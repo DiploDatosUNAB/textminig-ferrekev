@@ -1,19 +1,20 @@
 ---
 title: "Nube De Palabras"
-author: "Yanina"
-date: "10/12/2020"
+author: "Kevin"
+date: "24/9/2022"
 output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-
 # Cargar las librerías necesarias
-library(__________) #Para usar dplyr
-library(__________) #Para usar tidytext
+library(dplyr) #Para usar dplyr
+library(tidytext) #Para usar tidytext
 library(wordcloud2)
 library(tm)
 library(readr)
+library(tidyr)
+library(purrr)
 ```
 
 ## Nube de Palabras
@@ -25,13 +26,14 @@ Tenemos en el archivo `rladies_meetup.csv` los títulos de los eventos de R-Ladi
 EL primer paso es leer el archivo que tiene todos los titulos de meetups de r-ladies. **Completen este código para que se lea el archivo "rladies_meetups.csv"**
 
 ```{r}
-titulos <- ________("rladies_meetups.csv")
-
+titulos <- read_delim("rladies_meetups.csv", 
+    delim = ";", escape_double = FALSE, locale = locale(encoding = "ISO-8859-1"), 
+    trim_ws = TRUE)
 ```
 
 Ahora necesitamos filtrar **stop words** en varios idiomas (porque no solo hay capítulos en Español).
 
-1. _Ejecuten este código tal cual se presenta._ 
+1.  *Ejecuten este código tal cual se presenta.*
 
 ```{r}
 idiomas <- list('spanish', 'portuguese', 'french', 'danish', 'dutch', 'finnish', 'german', 'hungarian', 'italian', 'norwegian', 'russian', 'swedish')
@@ -47,37 +49,43 @@ variosIdiomas_stop_words <- idiomas %>%
 
 Ahora tenemos que obtener solo palabras, asi que vamos a :
 
-1. tokenizar, 
-2. hacer un _anti_join_ con _variosIdiomas_stop_words_
-3. contar la cantidad de palabras
-4. filtar aquellas palabras que tengan menos de 10 ocurrencias
+1.  tokenizar,
+2.  hacer un *anti_join* con *variosIdiomas_stop_words*
+3.  contar la cantidad de palabras
+4.  filtar aquellas palabras que tengan menos de 10 ocurrencias
 
-Completa el código para poder obtener el conjunto de datos `palabras` para luego realizar la nube de palabras. 
+Completa el código para poder obtener el conjunto de datos `palabras` para luego realizar la nube de palabras.
 
-  
 ```{r}
 palabras <- titulos %>%
-  _____________(word, titulo) %>%
-  _____________(variosIdiomas_stop_words) %>%
+  unnest_tokens(word, titulo) %>%
+  anti_join(variosIdiomas_stop_words) %>%
   count(word) %>%
-  _____________(n>10)
-
-
+  filter(n>10)
 ```
 
 Agregamos el código para visualizar el set de datos, las primeras 15 filas.
 
 ```{r}
-________(palabras, n=________)
+head(palabras, n=15)
 
 ```
 
+```{r}
+# Quitamos algunas palabras que parecen tener problemas de codificación y números que no aportan a la nube
+
+palabras2 <- palabras |> 
+  filter(word %in% c("1", "10d0", "10d4", "10d8", "10dc", "10e1", "2", "3", "4", "7528",	"7684", "8cc7"))
+
+palabras <- palabras |> 
+  anti_join(palabras2)
+
+```
 
 Con las palabras finales seleccionadas armamos una nube de palabras. Completa el código para poder obtener una nube de palabras. Aquí si queremos que se muestre el resultado.
 
 ```{r}
-___________ (__________ , size = 1, minRotation = -pi/6, maxRotation = -pi/6,
+nube <- wordcloud2(palabras , size = 1, minRotation = -pi/6, maxRotation = -pi/6,
                   color = "random-light", backgroundColor = "grey")
-
+nube
 ```
-
